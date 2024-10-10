@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        #login-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #app-chat {
+            display: none;
+        }
+
+        #ventana-mensajes {
+            border: 1px solid #ccc;
+            width: 50%;
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-panel">
+        <h2>Iniciar sesión</h2>
+        <input type="text" id="login-usuario" placeholder="Usuario" required>
+        <input type="password" id="login-password" placeholder="Contraseña" required>
+        <button onclick="login()">Iniciar Sesión</button>
+        <div id="login-mensaje"></div>
+    </div>
+
+    <div id="app-chat">
+        <h2>Bienvenido, <span id="nombre-usuario"></span></h2>
+        <div id="ventana-mensajes">
+            <div id="output"></div>
+            <div id="escribiendo-mensaje"></div>
+        </div>
+        <input id="mensaje" type="text" placeholder="Escribe tu mensaje aquí..." onkeyup="escribiendoMensaje()">
+        <button onclick="enviarMensaje()">Enviar</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>
