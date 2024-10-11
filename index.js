@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const http = require('http');
 const socketIO = require('socket.io');
+const bcrypt = require('bcrypt'); // Para encriptar la contraseña
 
 const app = express();
 const server = http.createServer(app);
@@ -10,7 +11,7 @@ const io = socketIO(server);
 const PORT = 5000;
 
 // Conexión a MongoDB Atlas
-mongoose.connect('mongodb+srv://alexanderruiz1605:5hOupdrgDslkWG6d@alex701.4kyi2.mongodb.net/chatAppDB', {
+mongoose.connect('mongodb+srv://Ricardo:Ricardo.123@proyecto.wue4m.mongodb.net/registroUsuario?retryWrites=true&w=majority&appName=PROYECTO', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
@@ -21,23 +22,24 @@ mongoose.connect('mongodb+srv://alexanderruiz1605:5hOupdrgDslkWG6d@alex701.4kyi2
       console.error('Error al conectar a MongoDB:', error);
   });
 
-// Definir el esquema de usuario y mensajes
+// Definir el esquema de usuario
 const userSchema = new mongoose.Schema({
     username: String,
     password: String
 });
 
+// Definir el esquema de mensajes
 const messageSchema = new mongoose.Schema({
     usuario: String,
     mensaje: String,
-    timestamp: { type: Date, default: Date.now }
+    timestamp: { type: Date, default: Date.now } // Añadir un timestamp
 });
 
-// Modelos
+// Modelo de Usuario y Mensaje
 const User = mongoose.model('User', userSchema);
 const Message = mongoose.model('Message', messageSchema);
 
-// Servir archivos estáticos
+// Servir el archivo estático
 app.use(express.static('public'));
 
 // Escuchar las conexiones de socket
@@ -47,24 +49,31 @@ io.on('connection', (socket) => {
     // Cargar mensajes previos de la base de datos y enviarlos al nuevo usuario
     (async () => {
         try {
-            const mensajes = await Message.find().sort({ timestamp: 1 }).limit(50).exec();
-            socket.emit('mensajesAnteriores', mensajes);
+            const mensajes = await Message.find().sort({ timestamp: 1 }).limit(50).exec(); // Actualizado
+            socket.emit('mensajesAnteriores', mensajes); // Enviar mensajes previos al nuevo usuario
         } catch (err) {
             console.error('Error al recuperar mensajes:', err);
         }
     })();
 
-    // Manejar el evento de login
+    // Escuchar el evento de login
     socket.on('login', async (data) => {
         try {
+            // Buscar al usuario en la base de datos
             const user = await User.findOne({ username: data.usuario });
+
             if (!user) {
+                // Usuario no encontrado
                 socket.emit('loginResponse', { success: false, error: 'userNotFound' });
             } else {
+                // Comparar la contraseña
                 const validPassword = data.password === user.password;
+
                 if (validPassword) {
+                    // Contraseña correcta
                     socket.emit('loginResponse', { success: true });
                 } else {
+                    // Contraseña incorrecta
                     socket.emit('loginResponse', { success: false, error: 'wrongPassword' });
                 }
             }
@@ -73,16 +82,17 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Manejar mensajes de chat
+    // Manejar los mensajes de chat
     socket.on('chat', async (data) => {
+        // Crear un nuevo mensaje y guardarlo en la base de datos
         const nuevoMensaje = new Message({
             usuario: data.usuario,
             mensaje: data.mensaje
         });
 
         try {
-            await nuevoMensaje.save();
-            io.emit('chat', { usuario: data.usuario, mensaje: data.mensaje });
+            await nuevoMensaje.save(); // Guardar mensaje en la base de datos
+            io.emit('chat', { usuario: data.usuario, mensaje: data.mensaje }); // Emitir el mensaje a todos los usuarios
         } catch (error) {
             console.error('Error al guardar el mensaje:', error);
         }
@@ -94,7 +104,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Iniciar el servidor
+// Iniciar el servidor en todas las interfaces
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
